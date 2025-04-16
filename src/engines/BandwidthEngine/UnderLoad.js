@@ -9,10 +9,11 @@ class BandwidthUnderLoadEngine extends BandwidthEngine {
       uploadChunkSize,
       downloadApiUrl,
       uploadApiUrl,
+      localAddress,
       ...ptProps
     } = {}
   ) {
-    super(measurements, { downloadApiUrl, uploadApiUrl, ...ptProps });
+    super(measurements, { downloadApiUrl, uploadApiUrl, localAddress, ...ptProps });
 
     if (downloadChunkSize || uploadChunkSize) {
       this.#loadEngine = new LoadNetworkEngine({
@@ -27,7 +28,8 @@ class BandwidthUnderLoadEngine extends BandwidthEngine {
               apiUrl: uploadApiUrl,
               chunkSize: uploadChunkSize
             }
-          : null
+          : null,
+        localAddress
       });
 
       super.onRunningChange = running => {

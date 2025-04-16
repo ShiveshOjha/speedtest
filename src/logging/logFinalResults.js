@@ -1,4 +1,5 @@
 import 'isomorphic-fetch';
+import { nodeFetch } from '../utils/nodeRequest.js';
 
 const round = (num, decimals = 0) =>
   !num ? num : Math.round(num * 10 ** decimals) / 10 ** decimals;
@@ -34,7 +35,7 @@ const scoreParser = d => ({
   classification: d.classificationName
 });
 
-const logAimResults = (results, { apiUrl }) => {
+const logAimResults = (results, { apiUrl, localAddress = null } = {}) => {
   const logData = {};
   Object.entries(resultsParsers).forEach(([logK, [fn, parser = d => d]]) => {
     const val = results[fn]();
@@ -50,9 +51,12 @@ const logAimResults = (results, { apiUrl }) => {
       }))
     ));
 
-  fetch(apiUrl, {
+  const isNodeFetch = !!localAddress;
+
+  (isNodeFetch ? nodeFetch : fetch)(apiUrl, {
     method: 'POST',
-    body: JSON.stringify(logData)
+    body: JSON.stringify(logData),
+    ...(localAddress ? { localAddress } : {})
   });
 };
 

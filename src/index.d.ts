@@ -17,6 +17,7 @@ export type MeasurementConfig = {
 
 export interface ConfigOptions {
   autoStart?: boolean;
+  localAddress?: string;
 
   // APIs
   downloadApiUrl?: string,

@@ -3,6 +3,7 @@ const REL_API_URL = 'https://speed.cloudflare.com';
 export default {
   // Engine
   autoStart: true,
+  localAddress: null,
 
   // APIs
   downloadApiUrl: `${REL_API_URL}/__down`,
