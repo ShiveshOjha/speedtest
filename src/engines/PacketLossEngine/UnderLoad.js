@@ -7,6 +7,7 @@ class PacketLossUnderLoadEngine extends PacketLossEngine {
     uploadChunkSize,
     downloadApiUrl,
     uploadApiUrl,
+    localAddress,
     ...ptProps
   } = {}) {
     super(ptProps);
@@ -24,7 +25,8 @@ class PacketLossUnderLoadEngine extends PacketLossEngine {
               apiUrl: uploadApiUrl,
               chunkSize: uploadChunkSize
             }
-          : null
+          : null,
+        localAddress
       });
 
       super.onCredentialsFailure =

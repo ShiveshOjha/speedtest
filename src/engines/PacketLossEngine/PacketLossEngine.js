@@ -1,4 +1,5 @@
 import SelfWebRtcDataConnection from './SelfWebRtcDataConnection';
+import { nodeFetch } from '../../utils/nodeRequest.js';
 
 export default class PacketLossEngine {
   constructor({
@@ -16,7 +17,8 @@ export default class PacketLossEngine {
     batchSize = 10,
     batchWaitTime = 10, // ms (in between batches)
     responsesWaitTime = 5000, // ms (debounced time after last msg without any response)
-    connectionTimeout = 5000 // ms
+    connectionTimeout = 5000, // ms
+    localAddress = null
   } = {}) {
     if (!turnServerUri && !turnServerCredsApi)
       throw new Error('Missing turnServerCredsApi or turnServerUri argument');
@@ -28,12 +30,15 @@ export default class PacketLossEngine {
 
     this.#numMsgs = numMsgs;
 
+    const isNodeFetch = !!localAddress;
+
     (!turnServerUser || !turnServerPass
       ? // Get TURN credentials from API endpoint if not statically supplied
-        fetch(turnServerCredsApi, {
+        (isNodeFetch ? nodeFetch : fetch)(turnServerCredsApi, {
           credentials: turnServerCredsApiIncludeCredentials
             ? 'include'
-            : undefined
+            : undefined,
+          ...(localAddress ? { localAddress } : {})
         })
           .then(r => r.json())
           .then(d => {

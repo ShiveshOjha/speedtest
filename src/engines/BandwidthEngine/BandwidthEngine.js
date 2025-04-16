@@ -1,4 +1,5 @@
 import 'isomorphic-fetch';
+import { nodeFetch } from '../../utils/nodeRequest.js';
 
 import memoize from 'lodash.memoize';
 
@@ -42,8 +43,6 @@ const calcUploadSpeed = ({ duration }, numBytes) => {
 
 const genContent = memoize(numBytes => '0'.repeat(numBytes));
 
-//
-
 class BandwidthMeasurementEngine {
   constructor(
     measurements,
@@ -51,7 +50,8 @@ class BandwidthMeasurementEngine {
       downloadApiUrl,
       uploadApiUrl,
       throttleMs = 0,
-      estimatedServerTime = 0
+      estimatedServerTime = 0,
+      localAddress = null
     } = {}
   ) {
     if (!measurements) throw new Error('Missing measurements argument');
@@ -63,6 +63,7 @@ class BandwidthMeasurementEngine {
     this.#uploadApi = uploadApiUrl;
     this.#throttleMs = throttleMs;
     this.#estimatedServerTime = Math.max(0, estimatedServerTime);
+    this.#localAddress = localAddress;
   }
 
   // Public attributes
@@ -146,6 +147,7 @@ class BandwidthMeasurementEngine {
   #estimatedServerTime = 0;
   #currentFetchPromise = undefined;
   #currentNextMsmTimeoutId = undefined;
+  #localAddress = null;
 
   // Internal methods
   #setRunning(running) {
@@ -264,11 +266,14 @@ class BandwidthMeasurementEngine {
             method: 'POST',
             body: genContent(numBytes)
           },
-      this.#fetchOptions
+      this.#fetchOptions,
+      this.#localAddress ? { localAddress: this.#localAddress } : {}
     );
 
     let serverTime;
-    const curPromise = (this.#currentFetchPromise = fetch(url, fetchOpt)
+    const isNodeFetch = !!this.#localAddress;
+    
+    const curPromise = (this.#currentFetchPromise = (isNodeFetch ? nodeFetch : fetch)(url, fetchOpt)
       .then(r => {
         if (r.ok) return r;
         throw Error(r.statusText);
@@ -286,16 +291,22 @@ class BandwidthMeasurementEngine {
               body
             });
 
-          return body;
+          return { response: r, body };
         })
       )
-      .then((_, reject) => {
+      .then(({ response: r, body }) => {
         if (curPromise._cancel) {
           reject('cancelled');
           return;
         }
 
-        const perf = performance.getEntriesByName(url).slice(-1)[0]; // get latest perf timing
+        const perf = isNodeFetch ? {
+          requestStart: r.timings.startTime,
+          responseStart: r.timings.firstByteTime || r.timings.endTime,
+          responseEnd: r.timings.endTime,
+          transferSize: r.timings.transferSize
+        } : performance.getEntriesByName(url).slice(-1)[0];
+        
         const timing = {
           transferSize: perf.transferSize,
           ttfb: getTtfb(perf),

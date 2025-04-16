@@ -7,6 +7,7 @@ class BandwidthWithParallelLatencyEngine extends BandwidthEngine {
       measureParallelLatency = false,
       parallelLatencyThrottleMs = 100,
       downloadApiUrl,
+      localAddress,
       uploadApiUrl,
       estimatedServerTime = 0,
       ...ptProps
@@ -16,6 +17,7 @@ class BandwidthWithParallelLatencyEngine extends BandwidthEngine {
       downloadApiUrl,
       uploadApiUrl,
       estimatedServerTime,
+      localAddress,
       ...ptProps
     });
 
@@ -33,6 +35,7 @@ class BandwidthWithParallelLatencyEngine extends BandwidthEngine {
           downloadApiUrl,
           uploadApiUrl,
           estimatedServerTime,
+          localAddress,
           throttleMs: parallelLatencyThrottleMs
         }
       );

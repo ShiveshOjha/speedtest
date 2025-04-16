@@ -159,7 +159,7 @@ class MeasurementEngine {
     const { type, ...msmConfig } = this.#config.measurements[this.#curMsmIdx];
     const msmResults = this.#curTypeResults();
 
-    const { downloadApiUrl, uploadApiUrl, estimatedServerTime } = this.#config;
+    const { downloadApiUrl, uploadApiUrl, estimatedServerTime, localAddress } = this.#config;
 
     let engine;
     switch (type) {
@@ -242,6 +242,7 @@ class MeasurementEngine {
             turnServerUser,
             turnServerPass,
             numMsgs,
+            localAddress: this.#config.localAddress || null,
 
             // if under load
             downloadChunkSize: msmConfig.loadDown
@@ -252,7 +253,6 @@ class MeasurementEngine {
               : undefined,
             downloadApiUrl,
             uploadApiUrl,
-
             ...ptCfg
           });
         }
@@ -306,6 +306,7 @@ class MeasurementEngine {
             measurementId: this.#measurementId,
             sessionId: this.#config.sessionId,
 
+            localAddress: this.#config.localAddress,
             // if under load
             downloadChunkSize: msmConfig.loadDown
               ? this.#optimalDownloadChunkSize
@@ -359,6 +360,7 @@ class MeasurementEngine {
             {
               downloadApiUrl,
               uploadApiUrl,
+              localAddress: this.#config.localAddress,
               estimatedServerTime,
               logApiUrl: this.#config.logMeasurementApiUrl,
               measurementId: this.#measurementId,

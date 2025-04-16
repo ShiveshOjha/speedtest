@@ -1,4 +1,5 @@
 import 'isomorphic-fetch';
+import { nodeFetch } from '../../utils/nodeRequest.js';
 
 class PromiseEngine {
   constructor(promiseFn) {
@@ -50,7 +51,7 @@ class PromiseEngine {
 }
 
 class LoadNetworkEngine {
-  constructor({ download, upload } = {}) {
+  constructor({ download, upload, localAddress = null } = {}) {
     // Expected attrs for each: { apiUrl, chunkSize }
     if (!download && !upload)
       throw new Error('Missing at least one of download/upload config');
@@ -66,25 +67,26 @@ class LoadNetworkEngine {
         if (!chunkSize) throw new Error(`Missing ${type} chunkSize argument`);
       });
 
-    const getLoadEngine = ({ apiUrl, qsParams = {}, fetchOptions = {} }) =>
-      new PromiseEngine(() => {
-        const fetchQsParams = Object.assign({}, qsParams, this.qsParams);
-        const url = `${
-          apiUrl.startsWith('http') || apiUrl.startsWith('//')
-            ? ''
-            : window.location.origin // use abs to match perf timing urls
-        }${apiUrl}?${Object.entries(fetchQsParams)
+    const getLoadEngine = ({ apiUrl, qsParams = {}, fetchOptions = {} }) => {
+      const finalFetchOptions = {
+        ...fetchOptions,
+        ...(localAddress ? { localAddress } : {})
+      };
+      
+      return new PromiseEngine(() => {
+        const url = `${apiUrl}?${Object.entries(qsParams)
           .map(([k, v]) => `${k}=${v}`)
           .join('&')}`;
-        const fetchOpt = Object.assign({}, fetchOptions, this.fetchOptions);
 
-        return fetch(url, fetchOpt)
-          .then(r => {
-            if (r.ok) return r;
-            throw Error(r.statusText);
-          })
-          .then(r => r.text());
+        const isNodeFetch = !!localAddress;
+        console.log(`[LoadNetworkEngine] Using ${isNodeFetch ? 'nodeFetch' : 'isomorphic-fetch'} with localAddress:`, localAddress);
+
+        return (isNodeFetch ? nodeFetch : fetch)(url, finalFetchOptions).then(r => {
+          if (!r.ok) throw Error(r.statusText);
+          return r.text();
+        });
       });
+    };
 
     download &&
       this.#engines.push(
